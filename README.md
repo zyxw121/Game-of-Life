@@ -1,7 +1,7 @@
 # Game-of-Life
 A highly customizable, concurrent, cellular automaton simulator
 
-###Usage
+### Usage
 First, compile the program by executing the script. Compiled files are put into the `BUILD` directory.
 
 ```
