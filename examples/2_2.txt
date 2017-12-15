@@ -1,0 +1,2 @@
+x = 15, y = 15, rule = 23/3
+10bobo2b$9bo5b$10bo2bob$12b3o6$bo13b$obo12b2$o2bo11b$2b2o11b$3bo!

@@ -1,0 +1,13 @@
+
+# Use scala to run a compiled Scala/CSO program
+#
+# Usage: xso [scala parameters]
+#
+
+eval exec scala "-Dio.threadcso.debugger.port=8000 -Dio.threadcso.pool.SECS=2" -cp .:"./BUILD":".PUBLISH//cso.jar:" src/Life.scala "$@"
+
+
+
+
+
+

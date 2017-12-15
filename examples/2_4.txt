@@ -1,0 +1,17 @@
+x = 145, y = 67, rule= B3678/S34678
+40bo79bo$$40bo79bo$$40bo79bo$$40bo79bo$$40bo79bo$$40bo6boo63boo6bo$29b
+4o4boo3b4o4b10ob4obboo23boobb4ob10o4b4o3boo4b4o$28bo4b4obb3o4b4o10bo4b
+oobbo21bobboo4bo10b4o4b3obb4o4bo$26b14ob6obb23o17b23obb6ob14o$26b46o
+17b46o$25b15ob6obb24o15b24obb6ob15o$25boobo4b4obb3o4b4o10bo4boobboboo
+15boobobboo4bo10b4o4b3obb4o4boboo$29b4o4boo3b4o4b10ob4obboo23boobb4ob
+10o4b4o3boo4b4o$40bo6boo63boo6bo$$40bo79bo$$40bo79bo$$40bo79bo$$40bo
+79bo$137boo$40bo79bo16boo$132boobb3obo$108bo12boo8bob6obboo$105bo3bo9b
+6oboo4b10obo$bo102b5o10b11obb11obo$3o101b9o7b25o$bo102b5o10b11obb11obo
+$105bo3bo9b6oboo4b10obo$108bo12boo8bob6obboo$132boobb3obo$40bo79bo16b
+oo$137boo$40bo79bo$$40bo79bo$$40bo79bo$$40bo79bo$$40bo6boo63boo6bo$29b
+4o4boo3b4o4b10ob4obboo23boobb4ob10o4b4o3boo4b4o$25boobo4b4obb3o4b4o10b
+o4boobboboo15boobobboo4bo10b4o4b3obb4o4boboo$25b15ob6obb24o15b24obb6ob
+15o$26b46o17b46o$26b14ob6obb23o17b23obb6ob14o$28bo4b4obb3o4b4o10bo4boo
+bbo21bobboo4bo10b4o4b3obb4o4bo$29b4o4boo3b4o4b10ob4obboo23boobb4ob10o
+4b4o3boo4b4o$40bo6boo63boo6bo$$40bo79bo$$40bo79bo$$40bo79bo$$40bo79bo
+$$40bo79bo!
