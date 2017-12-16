@@ -2,3 +2,4 @@ BUILD/*
 PUBLISH/*
 *.class
 *.log
+*.swp
