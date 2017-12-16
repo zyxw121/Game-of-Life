@@ -1,2 +1,4 @@
+BUILD/*
+PUBLISH/*
 *.class
 *.log
