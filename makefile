@@ -1,4 +1,5 @@
-ARGS=-cp .:"./BUILD":".PUBLISH//cso.jar:" -d "./BUILD"
+CSOPATH=.PUBLISH/cso.jar
+ARGS=-cp .:"./BUILD":"$(CSOPATH):" -d "./BUILD"
 
 all: display life
 
