@@ -3,3 +3,4 @@ PUBLISH/*
 *.class
 *.log
 *.swp
+target/
