@@ -3,39 +3,56 @@ import io.threadcso._
 import java.awt._
 import java.awt.event.{ActionEvent, ActionListener}
 import Life.utils._
+import Life.LifeGame._
 
-class Display(k : Continuation[Command]) extends Frame { 
+//A display for a specific game type
+//update is called by its controller
+trait Display[P,O,T <: Game[P,O]] { 
+  def update(x:O)
+}
 
-  def makeListener(cm : Command) : ActionListener = new ActionListener { def actionPerformed(e : ActionEvent) = { k(cm) }}
+
+class LifeDisplay(k : Command[LifeParams] => Unit) extends Frame with Display[LifeParams, LifeGame.LifeData, LifeGame] { 
+  def makeListener(cm : Command[LifeParams]) : ActionListener = new ActionListener { def actionPerformed(e : ActionEvent) = { k(cm) }}
+
+  var canPause = true
  
-  val g=new Button("Pause")  
-  g.setBounds(30,140,80,30)
-  this.add(g)
-  g.addActionListener( makeListener(Pause)  )
-  val h=new Button("Stop")  
+  val playButton=new Button("Pause")  
+  playButton.setBounds(30,140,80,30)
+  this.add(playButton)
+  playButton.addActionListener( new ActionListener { def actionPerformed(e:ActionEvent) = {
+    if (canPause) {
+      playButton.setLabel("Resume")
+      canPause = false
+      k(Pause)
+    }
+    else {
+      playButton.setLabel("Pause")
+      canPause = true
+      k(Resume)
+    }
+  }}) 
+
+
+/*  val h=new Button("Stop")  
   h.setBounds(30,180,80,30)
   this.add(h)
-  h.addActionListener( makeListener(Stop)  )
-  val j=new Button("Resume")  
-  j.setBounds(30,220,80,30)
-  this.add(j)
-  j.addActionListener( makeListener(Resume)  )
-  val l=new Button("Quit")  
-  l.setBounds(30,260,80,30)
-  this.add(l)
-  l.addActionListener( makeListener(Quit)  )
+  h.addActionListener( makeListener(Stop)  )*/
+  val quitButton=new Button("Quit")  
+  quitButton.setBounds(30,260,80,30)
+  this.add(quitButton)
+  quitButton.addActionListener( makeListener(Quit)  )
 
-  val b=new Button("Game")  
-  b.setBounds(30,100,80,30)
-  this.add(b)
+  val startButton=new Button("Start Game")  
+  startButton.setBounds(30,100,80,30)
+  this.add(startButton)
+  startButton.addActionListener( makeListener(Start(LifeParams(""))) ) 
+
   this.setSize(300,300)
   this.setLayout(null)
   this.setVisible(true)
-  b.addActionListener( makeListener(Start) )
   
-  def _update(x : Data) = {b.setLabel(x) }
-
-  def update(x:Data) = {_update(x) }  
-
+  def getParams = new LifeParams("")
+  def update(x:LifeGame.LifeData) = {}
 }
 

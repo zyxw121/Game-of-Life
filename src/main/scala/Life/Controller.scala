@@ -1,87 +1,56 @@
 package Life.Controller
-import Life.Display.{Display}
+import Life.utils._
 import io.threadcso._
-import scala.collection.mutable.HashMap 
-import Life.utils._ 
-import Life.Game.LifeGame
-import io.threadcso.semaphore.BooleanSemaphore
-import Life.Test.TestGame
 
-class Controller(in : ?[Command], k : Continuation[Data]) {
-  var alive = true
-  var currentGame : Option[Game] = None
-  def running = !(currentGame == None)
-  val mid = OneOne[PROC]
-
-  //Invariants: If currentGame not None then it is running in runProc
-  //Start while running does nothing
-  //Stop while not running does nothing
- 
-  def listen = proc {
+class Controller[P,O,T <:Game[P,O]](fac : GameFactory[P,O,T], in : ?[Command[P]], k : O => Unit){
+  private val mid = OneOne[() => Unit]
+  private var currentGame : Option[T] = None
+  private var alive = true
+  
+  private var listen : PROC = proc {
     repeat(alive){
-      val comm = in?()
-      Controller.commands.get(comm) match {
-        case Some(cmd) => cmd(this)
-        case None => {} 
+      val cm = in?()
+      cm match{
+        case Start(p) => start(p)
+        case Pause => pause()
+        case Resume => resume()
+        case Stop => stop()
+        case Quit => quit()
       }
-
     }
-    in.closeIn
-  } 
-
-  def start = currentGame match {
-    case Some(g) => {}
-    case None => {
-      val game =  new TestGame(new TestParams(5), k)
-      currentGame = Some(game)
-      mid!(game.make)
-    }
-  }  
-
-  //Assumes p doesn't terminate unless through "stop"
-  //BEWARE: Channel read may stall even when dead
-  def runProcs = proc {
-    repeat (alive) {
+    in.closeIn; mid.closeOut
+  }
+  private val runGame = proc {
+    repeat(alive){
       val p = mid?()
-      run(p)
+      p()
     }
     mid.closeIn
   }
 
-  def optApply(f : Game => Unit) = currentGame match {
-    case Some(g) => f(g)
-    case None => 
+
+  private def optApply(f : T => Unit) = currentGame match{ 
+    case Some(game) => f(game)
+    case None =>
   }
 
-  def resume = optApply(_.resume) 
-  def pause = optApply(_.pause)
-  def stop = {optApply(_.kill); currentGame = None}
-
-  def quit = { 
-    alive = false 
-    mid!(proc {}) //Dummy to make runProc terminate
-    in.closeIn
+  private def quit() = {
+    alive = false
+    stop() 
+    mid!(()=>{}) //"clear the pipes" so runGame terminates
   }
-  
-  def make = listen || runProcs
-
-}
-
-object Controller {
-
-  def main(args: Array[String]){
-      val toController = OneOne[Command]
-      val disp = new Display( (cm:Command) => run(proc {toController!(cm)}) ) 
-      val cont = new Controller(toController, (x:Data) => disp.update(x) ) 
-      ( cont.make )()
-      scala.sys.exit(0)
+  private def stop() = optApply(_.kill())
+  private def pause() = optApply(_.pause())
+  private def resume() = optApply(_.resume())
+  private def start(p : P) = currentGame match{
+    case Some(game) => 
+    case None => { 
+      val game = fac.make(k,p)
+      currentGame = Some(game)
+      mid!game.start
     }
+  }
 
-  val commands = HashMap[Command, Controller=>Unit](
-      Quit -> (_.quit),
-      Start -> (_.start),
-      Stop -> (_.stop),
-      Resume -> (_.resume),
-      Pause -> (_.pause)
-     )
+  def make : PROC = listen || runGame
+
 }

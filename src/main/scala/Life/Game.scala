@@ -1,4 +1,4 @@
-package Life.Game
+package Life.LifeGame
 import io.threadcso._
 import scala.io.Source
 import Life.utils._
@@ -12,10 +12,21 @@ import Life.utils._
   * until all threads have finished copying. 
   */ 
 
-class LifeGame(params : GameParams, k : Continuation[Data]) extends Game(params,k){
-  def make = proc {}
-  def pause = {}
-  def resume = {}
+case class LifeParams(path : String)
+object LifeGame {
+  type LifeData = Array[Boolean]
+}
+
+class LifeFactory extends GameFactory[LifeParams, LifeGame.LifeData, LifeGame]{
+  def make(k : LifeGame.LifeData => Unit, p : LifeParams) : LifeGame = new LifeGame(k,p)
+}
+
+class LifeGame(k : LifeGame.LifeData => Unit, p : LifeParams) extends Game[LifeParams, LifeGame.LifeData]{
+  def pause() = {}
+  def resume() = {}
+  def run() = proc {}
+  def start = () => {}
+  def state : GameState = {Running}
 
 
   private val BOARD_SIZE = 150 
@@ -166,7 +177,7 @@ class LifeGame(params : GameParams, k : Continuation[Data]) extends Game(params,
     protected override def manage = {
       if (generations >= totalgenerations) alive=false 
       generations += 1
-      k(generations.toString) 
+      //k(generations.toString) 
     }
   }
 
@@ -188,7 +199,7 @@ class LifeGame(params : GameParams, k : Continuation[Data]) extends Game(params,
     (for (w<- ws) yield w.worker)
   }
 
-  def kill = {alive = false}
+  def kill() = {alive = false}
 
   def game : PROC = {
       //totalgenerations = 100
