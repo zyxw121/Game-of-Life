@@ -8,18 +8,25 @@ import Life.LifeGame._
 //A display for a specific game type
 //update is called by its controller
 trait Display[P,O,T <: Game[P,O]] { 
-  def update(x:O)
 }
 
 
 class LifeDisplay(k : Command[LifeParams] => Unit) extends Frame with Display[LifeParams, LifeGame.LifeData, LifeGame] { 
   def makeListener(cm : Command[LifeParams]) : ActionListener = new ActionListener { def actionPerformed(e : ActionEvent) = { k(cm) }}
 
+  var a : Array[Array[Boolean]] = Array.ofDim[Boolean](150,150) 
+  private var board : Board = new Board() 
+  private var N = 150
+  private var CellSize = 3
+  private val buttonBar = new Panel()
+  private val pane = new ScrollPane()
+  pane.add(board)
+
   var canPause = true
  
   val playButton=new Button("Pause")  
-  playButton.setBounds(30,140,80,30)
-  this.add(playButton)
+  playButton.setBounds(80,0,50,30)
+  buttonBar.add(playButton)
   playButton.addActionListener( new ActionListener { def actionPerformed(e:ActionEvent) = {
     if (canPause) {
       playButton.setLabel("Resume")
@@ -39,20 +46,56 @@ class LifeDisplay(k : Command[LifeParams] => Unit) extends Frame with Display[Li
   this.add(h)
   h.addActionListener( makeListener(Stop)  )*/
   val quitButton=new Button("Quit")  
-  quitButton.setBounds(30,260,80,30)
-  this.add(quitButton)
+  quitButton.setBounds(0,0,50,30)
+  buttonBar.add(quitButton)
   quitButton.addActionListener( makeListener(Quit)  )
 
   val startButton=new Button("Start Game")  
-  startButton.setBounds(30,100,80,30)
-  this.add(startButton)
-  startButton.addActionListener( makeListener(Start(LifeParams(""))) ) 
+  startButton.setBounds(150,0,50,30)
+  buttonBar.add(startButton)
+  startButton.addActionListener( new ActionListener{ def actionPerformed(e : ActionEvent){
+    val p = getParams
+    k(Create(p))
+    k(Start)
+  }})
+  
 
-  this.setSize(300,300)
+  buttonBar.setBounds(20,N*CellSize+40,200,30)
+  buttonBar.setLayout(null)
+  pane.setBackground(Color.gray)
+  pane.setSize(CellSize*N, CellSize*N)
+  this.add(buttonBar)
+  this.add(pane)
+  pane.setBounds(20,20,N*CellSize, N*CellSize)
+  this.setSize(CellSize*N+40,CellSize*N + 100)
   this.setLayout(null)
   this.setVisible(true)
-  
-  def getParams = new LifeParams("")
-  def update(x:LifeGame.LifeData) = {}
+  this.pack()
+
+ 
+  class Board extends Component{
+    def DrawCell(x:Int, y:Int, c:Color){
+      val g = getGraphics()
+      g.setColor(c)
+      g.fillRect(x*CellSize, y*CellSize, CellSize, CellSize)
+    }
+  }
+
+
+
+   def drawBoard = {
+    for (i <- 0 until N){ for (j <- 0 until N){
+      board.DrawCell(j,i, if (a(i)(j)) Color.black else Color.white )
+   }}
+  }
+
+  override def paint(g:Graphics) = drawBoard
+
+  def getParams = new LifeParams("/Users/Dan/Coding/Game-of-Life/examples/lif.txt")
+  def update = (x:LifeGame.LifeData) => {
+    a = x; drawBoard
+  }
+
+    
 }
 

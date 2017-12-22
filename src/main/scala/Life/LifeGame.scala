@@ -1,6 +1,8 @@
 package Life.LifeGame
 import io.threadcso._
+import io.threadcso.semaphore._
 import scala.io.Source
+import java.io.File
 import Life.utils._
 
 /** Conway's Game of Life simulator
@@ -14,7 +16,7 @@ import Life.utils._
 
 case class LifeParams(path : String)
 object LifeGame {
-  type LifeData = Array[Boolean]
+  type LifeData = Array[Array[Boolean]]
 }
 
 class LifeFactory extends GameFactory[LifeParams, LifeGame.LifeData, LifeGame]{
@@ -22,22 +24,24 @@ class LifeFactory extends GameFactory[LifeParams, LifeGame.LifeData, LifeGame]{
 }
 
 class LifeGame(k : LifeGame.LifeData => Unit, p : LifeParams) extends Game[LifeParams, LifeGame.LifeData]{
-  def pause() = {}
-  def resume() = {}
-  def run() = proc {}
-  def start = () => {}
-  def state : GameState = {Running}
-
+  def pause() = {e.acquire}
+  def resume() = {e.release}
+  def start = () => {e.release; game()}
+  
+  private val e = new BooleanSemaphore(available = false, fair = true)
 
   private val BOARD_SIZE = 150 
   private val WORKERS = 8 
-  private var BORN = new Array[Boolean](9)
+  private var BORN = Array.fill[Boolean](9)(false)
   private var SURVIVE = new Array[Boolean](9) 
  
   private var board = Array.ofDim[Boolean](BOARD_SIZE, BOARD_SIZE)
-  //private val display = new Display(BOARD_SIZE, board)
-  
-  private var alive = true 
+  p match {
+    case LifeParams(path) => {setconfig(path); k(board); println("SET!")}
+  }
+ 
+  private var alive = true
+  private var _kill = false 
   private var generations = 0
   private var totalgenerations = 0
 
@@ -86,7 +90,6 @@ class LifeGame(k : LifeGame.LifeData => Unit, p : LifeParams) extends Game[LifeP
       born = numbers(2)
       survive = numbers(3)
     } 
-
     for (i<- born) BORN(i.toString.toInt) = true
     for (i<- survive)  SURVIVE(i.toString.toInt) = true 
 
@@ -175,9 +178,10 @@ class LifeGame(k : LifeGame.LifeData => Unit, p : LifeParams) extends Game[LifeP
 
   class Manager(y : Int, height : Int) extends Worker(y, height){
     protected override def manage = {
-      if (generations >= totalgenerations) alive=false 
+      alive = !_kill
+      e.acquire; e.release 
       generations += 1
-      //k(generations.toString) 
+      k(board) 
     }
   }
 
@@ -199,10 +203,9 @@ class LifeGame(k : LifeGame.LifeData => Unit, p : LifeParams) extends Game[LifeP
     (for (w<- ws) yield w.worker)
   }
 
-  def kill() = {alive = false}
+  def kill() = {_kill = true}
 
   def game : PROC = {
-      //totalgenerations = 100
       ||(makeWorkers(WORKERS)) 
       
   }
