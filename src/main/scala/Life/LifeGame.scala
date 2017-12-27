@@ -14,7 +14,7 @@ import Life.utils._
   * until all threads have finished copying. 
   */ 
 
-case class LifeParams(path : String)
+case class LifeParams(path : String, size : Int, wrap : Boolean)
 object LifeGame {
   type LifeData = Array[Array[Boolean]]
 }
@@ -30,14 +30,18 @@ class LifeGame(k : LifeGame.LifeData => Unit, p : LifeParams) extends Game[LifeP
   
   private val e = new BooleanSemaphore(available = false, fair = true)
 
-  private val BOARD_SIZE = 150 
+  private var BOARD_SIZE : Int  = 0
   private val WORKERS = 8 
   private var BORN = Array.fill[Boolean](9)(false)
   private var SURVIVE = new Array[Boolean](9) 
  
-  private var board = Array.ofDim[Boolean](BOARD_SIZE, BOARD_SIZE)
+  private var board : Array[Array[Boolean]] = null 
   p match {
-    case LifeParams(path) => {setconfig(path); k(board); println("SET!")}
+    case LifeParams(path,n,w) => {
+      board = Array.ofDim[Boolean](n, n)
+      BOARD_SIZE = n
+      setconfig(path); k(board)
+    }
   }
  
   private var alive = true

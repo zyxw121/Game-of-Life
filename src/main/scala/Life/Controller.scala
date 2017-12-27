@@ -1,7 +1,8 @@
 package Life.Controller
 import Life.utils._
 import io.threadcso._
-import Life.Display.LifeDisplay
+import swing._
+import Life.Display.{LifeDisplay, TestD}
 import Life.LifeGame.{LifeFactory, LifeParams, LifeGame}
 
 
@@ -15,7 +16,6 @@ class Controller[P,O,T <:Game[P,O]](fac : GameFactory[P,O,T], in : () => Command
     repeat(alive){
       val cm = in()
       cm match{
-       //Add init
         case Create(p) => create(p) 
         case Start => start()
         case Pause => pause()
@@ -28,9 +28,7 @@ class Controller[P,O,T <:Game[P,O]](fac : GameFactory[P,O,T], in : () => Command
   }
   private val runGame = proc {
     repeat(alive){
-      println("listening")
       val p = mid?()
-      println("recieved")
       p()
     }
     mid.closeIn
@@ -50,7 +48,7 @@ class Controller[P,O,T <:Game[P,O]](fac : GameFactory[P,O,T], in : () => Command
   private def pause() = optApply((g:T) => if (g.state == Running) {g.pause(); g.state = Paused} )
 
   private def resume() = optApply((g:T) => if (g.state == Paused) {g.resume(); g.state = Running} )
-  private def start() =optApply((g:T) => if (g.state == Fresh) { println("started"); mid!g.start; g.state = Running}) 
+  private def start() =optApply((g:T) => if (g.state == Fresh) { mid!g.start; g.state = Running}) 
   private def create(p:P) = currentGame match {
     case Some(game) => 
     case None => { 
@@ -64,15 +62,16 @@ class Controller[P,O,T <:Game[P,O]](fac : GameFactory[P,O,T], in : () => Command
 }
 
 
-object LifeController{
-  def main(args : Array[String]){
+/*object LifeController extends SimpleSwingApplication{
+  def top = new TestD 
+
+  override def startup(args : Array[String]){
     val c = OneOne[Command[LifeParams]]
     
     val disp = new LifeDisplay( (x:Command[LifeParams]) => c!x)
     val fac = new LifeFactory
     val con = new Controller(fac, () => c?(), disp.update)
     con.make()
-    scala.sys.exit(0) 
-
+    this.quit()
   }
-}
+}*/
