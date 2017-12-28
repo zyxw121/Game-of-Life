@@ -2,7 +2,6 @@ package Life.Controller
 import Life.utils._
 import io.threadcso._
 import swing._
-import Life.Display.{LifeDisplay, TestD}
 import Life.LifeGame.{LifeFactory, LifeParams, LifeGame}
 
 

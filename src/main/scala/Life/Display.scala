@@ -15,52 +15,113 @@ trait Display[P,O,T <: Game[P,O]] {
 }
 
 
-class Canvas(N : Int, a : Array[Array[Boolean]]) extends Panel{
+class Canvas extends Panel{
+  var N = 0 
+  var a : Array[Array[Boolean]] = null
+  val CS = 3  
+  
+  def set(n : Int, b : Array[Array[Boolean]]) = {
+    N = n
+    a = b
+    //this.repaint()
+  }
+  
   override def paintComponent(g : Graphics2D){
+    println("painting"+ N.toString)
+   
+   
     for (i<- 0 until N; j <- 0 until N){
       if (a(j)(i)) g.setColor(Color.black) else g.setColor(Color.white)
+      g.fillRect(CS*i,CS*j,CS,CS)
     }
   } 
 }
 
 
 
-
-
-
-
 object Main extends SwingApplication{
   val lab = new Label("test")
 
+def checkArr(a:Array[Array[Boolean]])= {
+  var test = false
+  for (row <- a; el <- row) test = test || el
+  println(test)
+}
+  var board : Array[Array[Boolean]] = null
+
+  val patternFCB = new Button("Select pattern file")
+  val patternFCL = new Label("N/A")
   var patternFileChooser = new FileChooser(new java.io.File("./"))
-  var patternFile = ""  
-  var sizeChooser = new TextField
-  var size = 0
+  var patternFile = "/Users/Dan/Coding/Game-of-Life/examples/lif.txt"  
+  var sizeChooser = new TextField(1)
+  var N = 0
+  var state  : GameState = Dead
 
   // Settings Input
   val okB = new Button("OK")
-  val sets = new Frame {contents = new FlowPanel(sizeChooser, okB)}
-  listenTo(okB)
-  reactions += {case ButtonClicked(`okB`) => size = 5; sets.visible=false; println("clicked ok") } 
+  val settingsOptions = new GridPanel(2,1) {
+    contents += new FlowPanel(new Label("Size"),sizeChooser) 
+    contents += new FlowPanel(new Label("Pattern file:"),patternFCL, patternFCB)
+  }
+  val settingsMenu = new FlowPanel(okB)
+  val sets = new Frame {contents = new GridPanel(2,1) {
+    contents += settingsOptions
+    contents += settingsMenu}
+  }
+  listenTo(okB, patternFCB)
+  reactions += {
+    case ButtonClicked(`okB`) => {
+      //size = sizeChooser.text.toInt //Make sure its int
+      N = 150
+      sets.visible=false
+      //board =Array.ofDim[Boolean](size,size)
+      ch!Create(LifeParams(patternFile, N, true))
+      state = Fresh
+      startB.enabled = true
+      quitB.text = "Stop"
+      //top.preferredSize = new Dimension(500,200)
+      disp.preferredSize = new Dimension(N*3, N*3)
+    } 
+    case ButtonClicked(`patternFCB`) => { 
+      if(patternFileChooser.showOpenDialog(settingsMenu) ==
+            FileChooser.Result.Approve) {
+          patternFile = patternFileChooser.selectedFile.getAbsolutePath
+          patternFCL.text = patternFile
+        }
+    }
+  } 
 
+    val ch = OneOne[Command[LifeParams]]
 
   val quitB = new Button("Quit")
   val startB = new Button("Start")
+  startB.enabled = false
   val newB = new Button("New Game")
 
-  var disp = lab //new Canvas(5, null)
+  var disp  = new Panel {
+    override def paintComponent(g : Graphics2D){
+      val x1 = Math.max(size.width - N*3,0)/2
+      val y1 = Math.max(size.height - N*3,0)/2
+      println(x1.toString + ", " + y1.toString)
+      for (i<- 0 until N; j <- 0 until N){
+        if (board(j)(i)) g.setColor(Color.black) else g.setColor(Color.white)
+        g.fillRect(x1+3*i,y1+3*j,3,3)
+      }
+    } 
+  } 
   val menu = new FlowPanel(quitB,startB,newB)
   
   def upp(n:Int) = lab.text=n.toString
  
   def top = new MainFrame{
+      preferredSize = new Dimension(500,600)
       contents = new BorderPanel{ 
-        layout(disp) = Center 
+        layout(new ScrollPane { contents = disp}) = Center 
         layout(menu) = South
       }
     } 
 
-  def update = (x:LifeGame.LifeData) => {}
+  def update = (x:LifeGame.LifeData) => {board = x;disp.repaint()}
 
   override def startup(args : Array[String]){
    val c = OneOne[Int]
@@ -69,12 +130,11 @@ object Main extends SwingApplication{
       while (true){sleep(1*Sec); upp(n); n+=1}
     }
     
-    fork(myproc)  
+    //fork(myproc)  
     //INIT Controller 
-   /* val ch = OneOne[Command[LifeParams]]
     val fac = new LifeFactory
     val con = new Controller(fac, () => ch?(), update)
-    fork(proc {con.make()})*/
+    fork(proc {con.make()})
     //END INIT
 
     val t = top
@@ -83,11 +143,30 @@ object Main extends SwingApplication{
 
   }
 
-  listenTo(newB)
-  listenTo(quitB)
+
+  listenTo(newB,quitB,startB)
   reactions +={
-    case ButtonClicked(`newB`) => sets.visible=true
-    case ButtonClicked(`quitB`) => this.quit() 
+    case ButtonClicked(`startB`) => state match{
+      case Fresh => ch!Start; startB.text = "Pause"; state = Running
+      case Running => ch!Pause; startB.text = "Resume"; state = Paused
+      case Paused => ch!Resume; startB.text = "Pause"; state = Running
+      case _ =>
+    }
+    case ButtonClicked(`newB`) if state == Dead => {
+      sets.visible=true
+      newB.enabled = false
+    }
+    case ButtonClicked(`quitB`) => state match{
+      case Dead => this.quit()
+      case _ => {
+        state = Dead
+        ch!Quit
+        quitB.text = "Quit"
+        newB.enabled = true
+        startB.enabled = false
+        startB.text = "Start"
+      }
+    } 
   }
 
 }

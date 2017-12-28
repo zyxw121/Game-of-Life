@@ -11,6 +11,7 @@ import io.threadcso._
   case object Stop extends Command 
 
   sealed abstract class GameState
+  case object Dead extends GameState
   case object Fresh extends GameState
   case object Paused extends GameState
   case object Running extends GameState
