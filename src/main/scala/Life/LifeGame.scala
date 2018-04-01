@@ -1,6 +1,9 @@
-import display.Display
+package Life.LifeGame
 import io.threadcso._
+import io.threadcso.semaphore._
 import scala.io.Source
+import java.io.File
+import Life.utils._
 
 /** Conway's Game of Life simulator
   * We have a number of worker threads (each assigned a horizontal strip of the
@@ -11,17 +14,38 @@ import scala.io.Source
   * until all threads have finished copying. 
   */ 
 
-object Life {
+case class LifeParams(path : String, size : Int, wrap : Boolean)
+object LifeGame {
+  type LifeData = Array[Array[Boolean]]
+}
 
-  private val BOARD_SIZE = 150 
+class LifeFactory extends GameFactory[LifeParams, LifeGame.LifeData, LifeGame]{
+  def make(k : LifeGame.LifeData => Unit, p : LifeParams) : LifeGame = new LifeGame(k,p)
+}
+
+class LifeGame(k : LifeGame.LifeData => Unit, p : LifeParams) extends Game[LifeParams, LifeGame.LifeData]{
+  def pause() = {e.acquire}
+  def resume() = {e.release}
+  def start = () => {e.release; game()}
+  
+  private val e = new BooleanSemaphore(available = false, fair = true)
+
+  private var BOARD_SIZE : Int  = 0
   private val WORKERS = 8 
-  private var BORN = new Array[Boolean](9)
+  private var BORN = Array.fill[Boolean](9)(false)
   private var SURVIVE = new Array[Boolean](9) 
  
-  private var board = Array.ofDim[Boolean](BOARD_SIZE, BOARD_SIZE)
-  //private val display = new Display(BOARD_SIZE, board)
-  
-  private var alive = true 
+  private var board : Array[Array[Boolean]] = null 
+  p match {
+    case LifeParams(path,n,w) => {
+      board = Array.ofDim[Boolean](n, n)
+      BOARD_SIZE = n
+      setconfig(path); k(board)
+    }
+  }
+ 
+  private var alive = true
+  private var _kill = false 
   private var generations = 0
   private var totalgenerations = 0
 
@@ -70,7 +94,6 @@ object Life {
       born = numbers(2)
       survive = numbers(3)
     } 
-
     for (i<- born) BORN(i.toString.toInt) = true
     for (i<- survive)  SURVIVE(i.toString.toInt) = true 
 
@@ -159,9 +182,10 @@ object Life {
 
   class Manager(y : Int, height : Int) extends Worker(y, height){
     protected override def manage = {
-      alive = (generations != totalgenerations)
+      alive = !_kill
+      e.acquire; e.release 
       generations += 1
-      //display.drawBoard
+      k(board) 
     }
   }
 
@@ -171,7 +195,6 @@ object Life {
     var extra = BOARD_SIZE % numWorkers
     var ws = new Array[Worker](numWorkers) 
     var currentY = 0
-
     for (i<- 0 until extra){
       ws(i) = new Worker(currentY , height+1)
       currentY += height+1
@@ -184,15 +207,11 @@ object Life {
     (for (w<- ws) yield w.worker)
   }
 
-  // First arg is configuration source file
-  def main(args: Array[String]) = {
-    try {
-      //setconfig(args(0))
-     // totalgenerations = args(1).toInt 
-      totalgenerations = 100
-      //run( ||(makeWorkers(WORKERS)) )
-      println("done")
-    }
-    catch { case _ : Throwable => println("Bad input!") }
+  def kill() = {_kill = true}
+
+  def game : PROC = {
+      ||(makeWorkers(WORKERS)) 
+      
   }
  }
+

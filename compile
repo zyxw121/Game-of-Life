@@ -1,2 +1,0 @@
-rm -rf BUILD/*
-exec scalac -cp .:"./BUILD":".PUBLISH//cso.jar:" -d "./BUILD" src/life.scala src/display.scala 
